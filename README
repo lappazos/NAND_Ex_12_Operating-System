@@ -1,0 +1,20 @@
+matanhalfon Lioraryepaz
+===============================================================================
+Lior Paz, ID 206240996, lior.paz1@mail.huji.ac.il
+Matan Halfon, ID 205680648, matan.halfon@mail.huji.ac.il
+===============================================================================
+
+                                 Project 12-OS
+                                 -------------
+
+Submitted Files:
+---------------
+
+Array.jack - a class for jack array.
+Screen.jack -Implement the OS screen class.
+Keyboard.jack - handles user inputs.
+Output.jack - Implements the OS Output class.
+String.jack - Implements The jack String class.
+Memory.jack - handles memory allocations and deallocation .
+Sys.jack - inits the OS classes and calls main.
+Math.jack - Math helper functions of the Jack OS.

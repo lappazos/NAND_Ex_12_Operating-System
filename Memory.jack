@@ -1,0 +1,160 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */
+class Memory {
+    static Array memory;
+    static Array freeList;
+    static Array memoryBottom;
+
+    static int heapTop;
+    static int heapBase;
+
+    static int freeList_seg_len;
+    static int freeList_next;//pointer to the next segment in the list
+
+    static int alloc_size; //the alloc block's length
+    /** Initializes the class. */
+
+    function void init()
+    {
+        let memory=0;
+        let heapBase=2048;
+        let heapTop=16384;
+        let freeList=heapBase;
+        let freeList_next=1;
+        let freeList_seg_len=0;
+        let freeList[freeList_seg_len]=heapTop-heapBase; //total heap
+        let freeList[freeList_next]= 0;
+        let alloc_size=-1;
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address)
+    {
+        return memory[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value)
+    {
+        let memory[address]=value;
+        return ;
+    }
+
+    /**find the best fit for an alloc
+    */
+
+    function Array best_fit(int size)
+    {
+        var Array curBlock,bestBlock;
+        var int curSize,bestSize;
+
+        let bestBlock=null;
+        let bestSize=heapTop-heapBase;
+        let curBlock=freeList;
+
+        while(~(curBlock=null))
+        {
+            let curSize=curBlock[freeList_seg_len]-1;
+            if(~(curSize<size)&(curSize<bestSize))
+            {
+                let bestBlock=curBlock;
+                let bestSize=curSize;
+            }
+            let curBlock=curBlock[freeList_next];
+        }
+        return bestBlock;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size)
+    {
+        var Array foundBlock,nextBlock,res;
+        let foundBlock=Memory.best_fit(size);
+        let res=foundBlock+1;
+        if(~(foundBlock=null))
+        {
+            if(foundBlock[freeList_seg_len]>3)
+            {
+                let nextBlock= foundBlock+size+1;
+                let nextBlock[freeList_next]=foundBlock[freeList_next];
+                let nextBlock[freeList_seg_len]=foundBlock[freeList_seg_len]-size-1;
+                let res[alloc_size]=size+1;
+                let freeList=nextBlock;
+            }
+            else
+            {
+                let nextBlock=foundBlock[freeList_seg_len];
+                let res[alloc_size]=foundBlock[freeList_seg_len];
+            }
+            let foundBlock=nextBlock;
+        }
+        return res;
+    }
+
+    /**
+    find the last free block
+    */
+    function Array findLast(Array object )
+    {
+        var Array block;
+        if(freeList>object)
+        {
+            return null;
+        }
+        let block=freeList;
+        while(~(block[freeList_next]=null)&(block[freeList_next]<object))
+        {
+            let block=block[freeList_next];
+        }
+        return block;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array object)
+    {
+        var Array prevBlock, nextBlock;
+        var int size;
+        let size=object[alloc_size];
+        let object=object-1;//block start
+        let prevBlock = Memory.findLast(object);
+        if (prevBlock=null)
+        {
+            let object[freeList_seg_len]=size;
+            let object[freeList_next]=freeList;
+            let freeList=object;
+            let prevBlock=object;
+        }
+        else
+        {
+            if((prevBlock+prevBlock[freeList_seg_len])=object)
+            {
+                let prevBlock[freeList_seg_len]=prevBlock[freeList_seg_len]+size;
+            }
+            else
+            {
+                let object[freeList_seg_len]=size;
+                let object[freeList_next]=prevBlock[freeList_next];
+                let prevBlock[freeList_next]=object;
+                let prevBlock=object;
+            }
+        }
+        if((prevBlock+prevBlock[freeList_seg_len])=prevBlock[freeList_seg_len])
+        {
+            let nextBlock=prevBlock[freeList_next];
+            let prevBlock[freeList_seg_len]=prevBlock[freeList_seg_len]+nextBlock[freeList_seg_len];
+            let prevBlock[freeList_next]=nextBlock[freeList_next];
+        }
+        return;
+    }
+}
